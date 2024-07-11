@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Watermarking and Extraction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #ccc;
+        }
+        nav {
+            margin-bottom: 20px;
+        }
+        nav a {
+            color: #ccc;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        h1 {
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            width: 80%;
+            flex-direction: column;
+            align-items: center;
+        }
+        .upload-area {
+            border: 2px dashed #009688;
+            padding: 20px;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            background-color: #444;
+            margin-bottom: 20px;
+            cursor: pointer;
+            color: #ccc;
+        }
+        .upload-area:hover {
+            background-color: #555;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        input[type="file"], input[type="text"], input[type="submit"] {
+            margin-bottom: 10px;
+            padding: 10px;
+            width: 80%;
+            max-width: 300px;
+            background-color: #555;
+            color: #ccc;
+            border: 1px solid #666;
+        }
+        input[type="submit"] {
+            background-color: #009688;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #00796b;
+        }
+        .result-section {
+            margin: 20px 0;
+            padding-top: 20px;
+            border-top: 1px solid #444;
+        }
+        .result-section img {
+            max-width: 80%;
+            height: auto;
+            display: block;
+            margin: 10px auto;
+        }
+        footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+        footer a {
+            color: #009688;
+            text-decoration: none;
+            font-size: 18px;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <script>
+        function switchLanguage(lang) {
+            document.documentElement.lang = lang;
+            if(lang === 'ko') {
+                document.getElementById('title').innerText = '워터마킹을 위한 이미지 업로드';
+                document.getElementById('uploadImageLabel').innerText = '이미지 업로드';
+                document.getElementById('watermarkTextPlaceholderImage').placeholder = '워터마크 텍스트';
+                document.getElementById('submitImage').value = '이미지 업로드';
+                document.getElementById('dragDropTextImage').innerText = '여기에 이미지 파일을 드롭하세요';
+            } else {
+                document.getElementById('title').innerText = 'Upload an Image for Watermarking';
+                document.getElementById('uploadImageLabel').innerText = 'Upload Image';
+                document.getElementById('watermarkTextPlaceholderImage').placeholder = 'Watermark text';
+                document.getElementById('submitImage').value = 'Upload Image';
+                document.getElementById('dragDropTextImage').innerText = 'Drag & Drop your image here';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var imageDropArea = document.getElementById('image-drop-area');
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                imageDropArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                imageDropArea.addEventListener(eventName, () => {
+                    imageDropArea.classList.add('highlight');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                imageDropArea.addEventListener(eventName, () => {
+                    imageDropArea.classList.remove('highlight');
+                }, false);
+            });
+
+            imageDropArea.addEventListener('drop', handleDropImage, false);
+
+            function handleDropImage(e) {
+                var dt = e.dataTransfer;
+                var files = dt.files;
+
+                document.getElementById('image_file').files = files;
+                updatePreview(files[0], 'image-preview', 'image-drop-area');
+            }
+
+            imageDropArea.addEventListener('click', () => document.getElementById('image_file').click());
+
+            document.getElementById('image_file').addEventListener('change', function(e) {
+                var file = this.files[0];
+                updatePreview(file, 'image-preview', 'image-drop-area');
+            });
+
+            function updatePreview(file, previewId, dropAreaId) {
+                var preview = document.getElementById(previewId);
+                var dropArea = document.getElementById(dropAreaId);
+
+                if (preview) {
+                    preview.remove();
+                }
+
+                if (file.type.startsWith('image/')) {
+                    var img = document.createElement('img');
+                    img.id = previewId;
+                    img.src = URL.createObjectURL(file);
+                    img.style.maxWidth = '100%';
+                    img.style.height = 'auto';
+                    dropArea.appendChild(img);
+                }
+            }
+        });
+    </script>
+</head>
+<body>
+    <nav>
+        <a href="#" onclick="switchLanguage('en')">English</a> | <a href="#" onclick="switchLanguage('ko')">한국어</a>
+    </nav>
+    <h1 id="title">Upload an Image for Watermarking</h1>
+    <div class="container">
+        <div id="image-drop-area" class="upload-area">
+            <p id="dragDropTextImage">Drag & Drop your image here</p>
+            <p>or</p>
+            <p>Click to select a file</p>
+        </div>
+    </div>
+    <div class="container">
+        <form action="/" method="post" enctype="multipart/form-data">
+            <input type="file" id="image_file" name="image" accept="image/*" style="display: none;">
+            <input type="text" id="watermarkTextPlaceholderImage" name="text" placeholder="Watermark text">
+            <input type="submit" id="submitImage" value="Upload Image">
+        </form>
+    </div>
+
+    <section class="result-section" id="result">
+        {% if original_url %}
+            <h2>Original Image</h2>
+            <img src="{{ url_for('uploaded_file', filename=original_url) }}" alt="Original Image">
+            <br>
+            <a href="{{ url_for('uploaded_file', filename=original_url) }}" download>Download Original Image</a>
+        {% endif %}
+        {% if watermarked_url %}
+            <h2>Watermarked Image</h2>
+            <img src="{{ url_for('result_file', filename=watermarked_url) }}" alt="Watermarked Image">
+            <br>
+            <a href="{{ url_for('result_file', filename=watermarked_url) }}" download>Download Watermarked Image</a>
+        {% endif %}
+        {% if extracted_url %}
+            <h2>Extracted Watermark Image</h2>
+            <img src="{{ url_for('extract_file', filename=extracted_url) }}" alt="Extracted Watermark Image">
+            <br>
+            <a href="{{ url_for('extract_file', filename=extracted_url) }}" download>Download Extracted Watermark Image</a>
+        {% endif %}
+    </section>
+
+    <footer>
+        <a href="{{ url_for('index') }}">Go to Main Page</a>
+    </footer>
+</body>
+</html>

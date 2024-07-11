@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extract Watermark</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: #ccc;
+        }
+        nav {
+            margin-bottom: 20px;
+        }
+        nav a {
+            color: #ccc;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        h1 {
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            width: 80%;
+            flex-direction: column;
+            align-items: center;
+        }
+        .upload-area {
+            border: 2px dashed #009688;
+            padding: 20px;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            background-color: #444;
+            margin-bottom: 20px;
+            cursor: pointer;
+            color: #ccc;
+        }
+        .upload-area:hover {
+            background-color: #555;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        input[type="file"] {
+            margin-bottom: 10px;
+            padding: 10px;
+            width: 80%;
+            max-width: 300px;
+            background-color: #555;
+            color: #ccc;
+            border: 1px solid #666;
+        }
+        input[type="submit"] {
+            background-color: #009688;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            width: 80%;
+            max-width: 300px;
+        }
+        input[type="submit"]:hover {
+            background-color: #00796b;
+        }
+        .result-section {
+            margin: 20px 0;
+            padding-top: 20px;
+            border-top: 1px solid #444;
+        }
+        .result-section img {
+            max-width: 80%;
+            height: auto;
+            display: block;
+            margin: 10px auto;
+        }
+        footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+        footer a {
+            color: #009688;
+            text-decoration: none;
+            font-size: 18px;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <script>
+        function switchLanguage(lang) {
+            document.documentElement.lang = lang;
+            if(lang === 'ko') {
+                document.getElementById('title').innerText = '워터마크를 추출하기 위한 이미지 업로드';
+                document.getElementById('uploadOriginalLabel').innerText = '원본 이미지 업로드';
+                document.getElementById('uploadWatermarkedLabel').innerText = '워터마크 이미지 업로드';
+                document.getElementById('submitExtract').value = '워터마크 추출';
+                document.getElementById('dragDropTextOriginal').innerText = '여기에 원본 이미지 파일을 드롭하세요';
+                document.getElementById('dragDropTextWatermarked').innerText = '여기에 워터마크 이미지 파일을 드롭하세요';
+            } else {
+                document.getElementById('title').innerText = 'Upload Images to Extract Watermark';
+                document.getElementById('uploadOriginalLabel').innerText = 'Upload Original Image';
+                document.getElementById('uploadWatermarkedLabel').innerText = 'Upload Watermarked Image';
+                document.getElementById('submitExtract').value = 'Extract Watermark';
+                document.getElementById('dragDropTextOriginal').innerText = 'Drag & Drop your original image here';
+                document.getElementById('dragDropTextWatermarked').innerText = 'Drag & Drop your watermarked image here';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var originalDropArea = document.getElementById('original-drop-area');
+            var watermarkedDropArea = document.getElementById('watermarked-drop-area');
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                originalDropArea.addEventListener(eventName, preventDefaults, false);
+                watermarkedDropArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                originalDropArea.addEventListener(eventName, () => {
+                    originalDropArea.classList.add('highlight');
+                }, false);
+                watermarkedDropArea.addEventListener(eventName, () => {
+                    watermarkedDropArea.classList.add('highlight');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                originalDropArea.addEventListener(eventName, () => {
+                    originalDropArea.classList.remove('highlight');
+                }, false);
+                watermarkedDropArea.addEventListener(eventName, () => {
+                    watermarkedDropArea.classList.remove('highlight');
+                }, false);
+            });
+
+            originalDropArea.addEventListener('drop', handleDropOriginal, false);
+            watermarkedDropArea.addEventListener('drop', handleDropWatermarked, false);
+
+            function handleDropOriginal(e) {
+                var dt = e.dataTransfer;
+                var files = dt.files;
+
+                document.getElementById('original_file').files = files;
+                updatePreview(files[0], 'original-preview', 'original-drop-area');
+            }
+
+            function handleDropWatermarked(e) {
+                var dt = e.dataTransfer;
+                var files = dt.files;
+
+                document.getElementById('watermarked_file').files = files;
+                updatePreview(files[0], 'watermarked-preview', 'watermarked-drop-area');
+            }
+
+            originalDropArea.addEventListener('click', () => document.getElementById('original_file').click());
+            watermarkedDropArea.addEventListener('click', () => document.getElementById('watermarked_file').click());
+
+            document.getElementById('original_file').addEventListener('change', function(e) {
+                var file = this.files[0];
+                updatePreview(file, 'original-preview', 'original-drop-area');
+            });
+
+            document.getElementById('watermarked_file').addEventListener('change', function(e) {
+                var file = this.files[0];
+                updatePreview(file, 'watermarked-preview', 'watermarked-drop-area');
+            });
+
+            function updatePreview(file, previewId, dropAreaId) {
+                var preview = document.getElementById(previewId);
+                var dropArea = document.getElementById(dropAreaId);
+
+                if (preview) {
+                    preview.remove();
+                }
+
+                if (file.type.startsWith('image/')) {
+                    var img = document.createElement('img');
+                    img.id = previewId;
+                    img.src = URL.createObjectURL(file);
+                    img.style.maxWidth = '100%';
+                    img.style.height = 'auto';
+                    dropArea.appendChild(img);
+                }
+            }
+        });
+    </script>
+</head>
+<body>
+    <nav>
+        <a href="#" onclick="switchLanguage('en')">English</a> | <a href="#" onclick="switchLanguage('ko')">한국어</a>
+    </nav>
+    <h1 id="title">Upload Images to Extract Watermark</h1>
+    <div class="container">
+        <div id="original-drop-area" class="upload-area">
+            <p id="dragDropTextOriginal">Drag & Drop your original image here</p>
+            <p>or</p>
+            <p>Click to select a file</p>
+        </div>
+        <div id="watermarked-drop-area" class="upload-area">
+            <p id="dragDropTextWatermarked">Drag & Drop your watermarked image here</p>
+            <p>or</p>
+            <p>Click to select a file</p>
+        </div>
+    </div>
+    <div class="container">
+        <form action="/extract_image" method="post" enctype="multipart/form-data">
+            <input type="file" id="original_file" name="original" accept="image/*" style="display: none;">
+            <input type="file" id="watermarked_file" name="watermarked" accept="image/*" style="display: none;">
+            <input type="submit" id="submitExtract" value="Extract Watermark">
+        </form>
+    </div>
+
+    <section class="result-section" id="result">
+        {% if image_url %}
+            <h2>Extracted Watermark Image</h2>
+            <img src="{{ image_url }}" alt="Extracted Watermark Image">
+            <br>
+            <a href="{{ image_url }}" download>Download Image</a>
+        {% endif %}
+    </section>
+
+    <footer>
+        <a href="{{ url_for('index') }}">Go to Main Page</a>
+    </footer>
+</body>
+</html>
